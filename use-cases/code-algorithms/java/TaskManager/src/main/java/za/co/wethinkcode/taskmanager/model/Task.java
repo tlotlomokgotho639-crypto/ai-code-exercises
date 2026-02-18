@@ -165,6 +165,18 @@ public class Task {
         );
     }
 
+    public boolean isOverdueMoreThan7Days() {
+        if (this.dueDate == null) {
+            return false;
+        }
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
+        return (
+            this.dueDate.isBefore(sevenDaysAgo) &&
+            this.status != TaskStatus.DONE &&
+            this.status != TaskStatus.ABANDONED
+        );
+    }
+
     public void addTag(String tag) {
         if (!this.tags.contains(tag)) {
             this.tags.add(tag);

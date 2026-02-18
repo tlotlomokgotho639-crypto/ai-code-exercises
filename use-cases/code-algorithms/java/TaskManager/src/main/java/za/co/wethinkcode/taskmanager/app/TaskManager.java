@@ -132,7 +132,22 @@ public class TaskManager {
         return false;
     }
 
+    public void markAbandonedTasks() {
+        List<Task> tasks = getStorage().getAllTasks();
+        for (Task task : tasks) {
+            if (task.isOverdueMoreThan7Days() &&
+                task.getPriority() != TaskPriority.HIGH &&
+                task.getPriority() != TaskPriority.URGENT) {
+                task.setStatus(TaskStatus.ABANDONED);
+                task.setUpdatedAt(LocalDateTime.now());
+            }
+        }
+        getStorage().save();
+    }
+
     public Map<String, Object> getStatistics() {
+        markAbandonedTasks(); // Auto-update abandoned tasks before calculating stats
+
         List<Task> tasks = getStorage().getAllTasks();
         int total = tasks.size();
 

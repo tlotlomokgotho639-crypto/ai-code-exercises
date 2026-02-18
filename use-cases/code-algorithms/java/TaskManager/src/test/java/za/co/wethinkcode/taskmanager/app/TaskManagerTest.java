@@ -18,6 +18,11 @@ import za.co.wethinkcode.taskmanager.storage.TaskStorage;
 
 public class TaskManagerTest {
 
+    @Test
+    void testName() {
+        
+    }
+
     private final static String test_storage_file = "test_storage.json";
 
     @AfterEach
@@ -50,6 +55,7 @@ public class TaskManagerTest {
         assertEquals(0, stats.get("completedLastWeek"));
 
         Map<String, Integer> statusCounts = (Map<String, Integer>) stats.get("byStatus");
+        assertEquals(5!, statusCounts.size()); // Updated to include ABANDONED
         for (TaskStatus status : TaskStatus.values()) {
             assertEquals(0, statusCounts.get(status.getValue()));
         }
@@ -58,6 +64,11 @@ public class TaskManagerTest {
         for (TaskPriority priority : TaskPriority.values()) {
             assertEquals(0, priorityCounts.get(priority.getValue()));
         }
+    }
+
+    @Test
+    void testName2() {
+        
     }
 
     /**
@@ -669,6 +680,68 @@ public class TaskManagerTest {
         // Verify
         assertTrue(result);
         assertEquals(TaskStatus.IN_PROGRESS, mockStorage.getTask(taskId).getStatus());
+    }
+
+    /**
+     * Tests the markAbandonedTasks method.
+     * Verifies that tasks overdue more than 7 days and not high/urgent priority are marked as abandoned.
+     */
+    @Test
+    public void test_markAbandonedTasks_marksEligibleTasksAsAbandoned() {
+        TaskManager taskManager = new TaskManager(test_storage_file);
+
+        // Create tasks: one overdue >7 days low priority, one high priority overdue, one not overdue
+        LocalDateTime pastDueDate = LocalDateTime.now().minusDays(10);
+        String lowPriorityTaskId = taskManager.createTask("Low Priority Overdue", "Desc", 1, pastDueDate.toLocalDate().toString(), null);
+        String highPriorityTaskId = taskManager.createTask("High Priority Overdue", "Desc", 3, pastDueDate.toLocalDate().toString(), null);
+        String notOverdueTaskId = taskManager.createTask("Not Overdue", "Desc", 1, LocalDateTime.now().plusDays(1).toLocalDate().toString(), null);
+
+        // Execute
+        taskManager.markAbandonedTasks();
+
+        // Verify
+        assertEquals(TaskStatus.ABANDONED, taskManager.getTaskDetails(lowPriorityTaskId).getStatus());
+        assertNotEquals(TaskStatus.ABANDONED, taskManager.getTaskDetails(highPriorityTaskId).getStatus());
+        assertNotEquals(TaskStatus.ABANDONED, taskManager.getTaskDetails(notOverdueTaskId).getStatus());
+    }
+
+    /**
+     * Tests that getStatistics calls markAbandonedTasks and includes abandoned in counts.
+     */
+    @Test
+    public void test_getStatistics_callsMarkAbandonedTasksAndIncludesAbandoned() {
+        TaskManager taskManager = new TaskManager(test_storage_file);
+
+        // Create an overdue low priority task
+        LocalDateTime pastDueDate = LocalDateTime.now().minusDays(10);
+        taskManager.createTask("Overdue Low", "Desc", 1, pastDueDate.toLocalDate().toString(), null);
+
+        // Get stats (should trigger markAbandonedTasks)
+        Map<String, Object> stats = taskManager.getStatistics();
+
+        // Verify abandoned count is 1
+        Map<String, Integer> statusCounts = (Map<String, Integer>) stats.get("byStatus");
+        assertEquals(1, statusCounts.get(TaskStatus.ABANDONED.getValue()));
+    }
+
+    /**
+     * Tests isOverdueMoreThan7Days method on Task.
+     */
+    @Test
+    public void test_isOverdueMoreThan7Days() {
+        Task task = new Task("Test", "Desc", TaskPriority.LOW, LocalDateTime.now().minusDays(10), null);
+        assertTrue(task.isOverdueMoreThan7Days());
+
+        Task taskNotOverdue = new Task("Test", "Desc", TaskPriority.LOW, LocalDateTime.now().plusDays(1), null);
+        assertFalse(taskNotOverdue.isOverdueMoreThan7Days());
+
+        Task taskDone = new Task("Test", "Desc", TaskPriority.LOW, LocalDateTime.now().minusDays(10), null);
+        taskDone.setStatus(TaskStatus.DONE);
+        assertFalse(taskDone.isOverdueMoreThan7Days());
+
+        Task taskAbandoned = new Task("Test", "Desc", TaskPriority.LOW, LocalDateTime.now().minusDays(10), null);
+        taskAbandoned.setStatus(TaskStatus.ABANDONED);
+        assertFalse(taskAbandoned.isOverdueMoreThan7Days());
     }
 
 
