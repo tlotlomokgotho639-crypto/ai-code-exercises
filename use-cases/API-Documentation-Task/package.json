@@ -1,0 +1,16 @@
+{
+  "name": "api-documentation-task",
+  "version": "1.0.0",
+  "description": "Product API for documentation task",
+  "main": "product-api.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  }
+}

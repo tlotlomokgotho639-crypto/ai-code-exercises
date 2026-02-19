@@ -1,0 +1,393 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Products API",
+    "description": "API for retrieving product information with filtering, sorting, and pagination support",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@example.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.example.com",
+      "description": "Production server"
+    },
+    {
+      "url": "https://staging-api.example.com",
+      "description": "Staging server"
+    }
+  ],
+  "paths": {
+    "/api/products": {
+      "get": {
+        "summary": "List products",
+        "description": "Get a list of products with flexible filtering, sorting, and pagination. Supports filtering by category, price range, and stock availability. Results can be sorted by any field in ascending or descending order.",
+        "operationId": "listProducts",
+        "tags": ["Products"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter products by category (e.g., 'electronics', 'clothing', 'accessories')"
+          },
+          {
+            "in": "query",
+            "name": "minPrice",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Filter products with price greater than or equal to this value"
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            },
+            "description": "Filter products with price less than or equal to this value"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "default": "createdAt"
+            },
+            "description": "Field to sort by. Valid values: name, price, category, createdAt, updatedAt, stockQuantity",
+            "example": "price"
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number for pagination",
+            "example": 1
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of items per page (maximum 100)"
+          },
+          {
+            "in": "query",
+            "name": "inStock",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "When true, only show products with stock > 0"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "products": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                },
+                "example": {
+                  "products": [
+                    {
+                      "_id": "61fa9bcf5c130b2e6d675432",
+                      "name": "Wireless Headphones",
+                      "description": "High-quality wireless headphones with noise cancellation",
+                      "price": 89.99,
+                      "category": "electronics",
+                      "stockQuantity": 45,
+                      "createdAt": "2023-02-01T15:32:47Z",
+                      "updatedAt": "2023-03-15T09:21:08Z"
+                    }
+                  ],
+                  "pagination": {
+                    "total": 42,
+                    "page": 1,
+                    "limit": 20,
+                    "pages": 3
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Invalid parameter",
+                  "message": "The provided parameters are invalid"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests - rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Rate limit exceeded",
+                  "message": "Too many requests. Please try again later."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Server error",
+                  "message": "Failed to fetch products"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/products/{productId}": {
+      "get": {
+        "summary": "Get product by ID",
+        "description": "Retrieves a single product by its unique MongoDB ObjectId identifier",
+        "operationId": "getProductById",
+        "tags": ["Products"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "productId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            },
+            "description": "The unique MongoDB ObjectId of the product",
+            "example": "61fa9bcf5c130b2e6d675432"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                },
+                "example": {
+                  "_id": "61fa9bcf5c130b2e6d675432",
+                  "name": "Wireless Headphones",
+                  "description": "High-quality wireless headphones with noise cancellation",
+                  "price": 89.99,
+                  "category": "electronics",
+                  "stockQuantity": 45,
+                  "createdAt": "2023-02-01T15:32:47Z",
+                  "updatedAt": "2023-03-15T09:21:08Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid product ID format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Invalid ID",
+                  "message": "Invalid product ID format"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Not found",
+                  "message": "Product not found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "error": "Server error",
+                  "message": "Failed to fetch product"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Product": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Unique MongoDB ObjectId identifier for the product",
+            "example": "61fa9bcf5c130b2e6d675432"
+          },
+          "name": {
+            "type": "string",
+            "description": "Product name",
+            "example": "Wireless Headphones"
+          },
+          "description": {
+            "type": "string",
+            "description": "Product description",
+            "example": "High-quality wireless headphones with noise cancellation"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "description": "Product price",
+            "example": 89.99
+          },
+          "category": {
+            "type": "string",
+            "description": "Product category",
+            "example": "electronics"
+          },
+          "stockQuantity": {
+            "type": "integer",
+            "description": "Available quantity in stock",
+            "example": 45
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of product creation",
+            "example": "2023-02-01T15:32:47Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of last product update",
+            "example": "2023-03-15T09:21:08Z"
+          }
+        },
+        "required": ["_id", "name", "price", "category", "stockQuantity"]
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Total number of items matching the filter",
+            "example": 42
+          },
+          "page": {
+            "type": "integer",
+            "description": "Current page number",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Items per page",
+            "example": 20
+          },
+          "pages": {
+            "type": "integer",
+            "description": "Total number of pages available",
+            "example": 3
+          }
+        },
+        "required": ["total", "page", "limit", "pages"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error type or code",
+            "example": "Server error"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message",
+            "example": "Failed to fetch products"
+          }
+        },
+        "required": ["error", "message"]
+      }
+    },
+    "rate-limits": {
+      "default": {
+        "limit": 100,
+        "window": "1 minute"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Products",
+      "description": "Product catalog operations"
+    }
+  ]
+}

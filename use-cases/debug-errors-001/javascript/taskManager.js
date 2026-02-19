@@ -15,10 +15,12 @@ function initApp() {
 
 // Function to add a new task
 function addTask(taskName) {
-  let tasks = { id: Date.now(), name: taskName, completed: false };  // Notice the 'let tasks' here!
-  console.log("Task added:", tasks);
+  // Fixed: Remove 'let' to assign to global array instead of creating local variable
+  const newTask = { id: Date.now(), name: taskName, completed: false };
+  tasks.push(newTask);
+  console.log("Task added:", newTask);
   displayTasks();
-  return tasks; // Return for testing
+  return newTask; // Return for testing
 }
 
 // Function to display all tasks
